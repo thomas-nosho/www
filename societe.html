@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide Interactif pour la Structuration du Capital de nosho.ai</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices: 
+        - Report Info: SAS vs. SARL comparison. Goal: Compare & Decide. Viz: Interactive HTML table highlighting key differences. Interaction: Clicking on a criterion reveals more info. Justification: Direct comparison facilitates decision-making. Library: Vanilla JS.
+        - Report Info: Equity split models. Goal: Simulate & Discuss. Viz: An interactive form for weighted contributions updating a Chart.js donut chart. Interaction: Users input values for various contributions, and the chart updates in real-time. Justification: Transforms an abstract concept into a tangible simulation, providing a concrete basis for discussion. Library: Chart.js.
+        - Report Info: Vesting clauses. Goal: Understand change over time. Viz: A slider controlling a simple bar chart showing vested vs. unvested equity over a 4-year period. Interaction: Dragging the slider. Justification: Visually demonstrates the mechanics of vesting and the importance of long-term commitment. Library: Chart.js.
+        - Report Info: Dilution & ESOP. Goal: Understand relationships. Viz: A simple pie chart. Interaction: A button simulates a funding round, showing how the founders' slice shrinks but the total value grows. Justification: Simplifies the concept of dilution, showing it as a necessary step for growth. Library: Chart.js.
+        - Report Info: Shareholders' agreement clauses. Goal: Inform. Viz: Interactive cards. Interaction: Clicking a card flips it to reveal its definition and importance. Justification: Breaks down dense legal information into digestible chunks. Library: Vanilla JS.
+    -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 450px; margin-left: auto; margin-right: auto; height: 320px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 380px; } }
+        .tab-button.active { border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .card-flip { perspective: 1000px; }
+        .card-flip-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+        .card-flip:hover .card-flip-inner { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; border-radius: 0.75rem; }
+        .card-front { background-color: #f3f4f6; }
+        .card-back { background-color: #e5e7eb; transform: rotateY(180deg); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <header class="text-center mb-10 md:mb-16">
+            <h1 class="text-3xl md:text-5xl font-bold text-gray-900">Guide de Structuration du Capital</h1>
+            <p class="mt-4 text-lg md:text-xl text-gray-600">Un outil interactif pour les co-fondateurs de <span class="font-semibold text-blue-600">nosho.ai</span></p>
+        </header>
+
+        <nav class="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-sm mb-12">
+            <div class="border-b border-gray-200 overflow-x-auto no-scrollbar">
+                <div class="flex space-x-4 -mb-px justify-center" id="nav-tabs">
+                    <button data-target="intro" class="nav-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Accueil</button>
+                    <button data-target="structure" class="nav-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">1. Structure Juridique</button>
+                    <button data-target="repartition" class="nav-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">2. Répartition du Capital</button>
+                    <button data-target="pacte" class="nav-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">3. Pacte d'Associés</button>
+                    <button data-target="futur" class="nav-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">4. Attirer les Talents</button>
+                    <button data-target="checklist" class="nav-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">✓ Checklist</button>
+                </div>
+            </div>
+        </nav>
+
+        <main id="main-content">
+            <section id="intro" class="content-section">
+                <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Poser les fondations du succès de nosho.ai</h2>
+                    <p class="text-gray-600 mb-4">Bienvenue dans votre guide interactif. La création d'une startup avec six co-fondateurs est une aventure passionnante mais complexe. La table de capitalisation ("cap table") est votre document le plus stratégique. Elle ne se contente pas de répartir des pourcentages ; elle raconte l'histoire de votre collaboration, de vos valeurs et de votre vision. Une structure juste et transparente est la clé pour maintenir la motivation, attirer les investisseurs et assurer une croissance saine.</p>
+                    <p class="text-gray-600">Cet outil est conçu pour vous aider à naviguer les décisions critiques de manière informée. Chaque section aborde une étape clé, avec des explications et des simulateurs pour rendre les concepts concrets. Utilisez-le comme base de discussion pour aligner votre équipe et construire des fondations solides pour l'avenir de nosho.ai.</p>
+                </div>
+            </section>
+            
+            <section id="structure" class="content-section">
+                 <div class="max-w-5xl mx-auto">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold text-gray-900">Étape 1 : Choisir la bonne Structure Juridique</h2>
+                        <p class="mt-2 text-gray-600">Le choix de la forme juridique impacte la flexibilité, la fiscalité et votre capacité à lever des fonds. Pour une startup en France avec des ambitions de croissance, le choix se résume souvent entre la SAS et la SARL.</p>
+                    </div>
+                    <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                        <div class="flex justify-center mb-6">
+                            <div class="inline-flex rounded-md shadow-sm">
+                                <button id="sas-btn" class="tab-button active px-4 py-2 text-sm font-medium border border-gray-200 rounded-l-lg">SAS</button>
+                                <button id="sarl-btn" class="tab-button px-4 py-2 text-sm font-medium border-t border-b border-gray-200">SARL</button>
+                                <button id="reco-btn" class="tab-button px-4 py-2 text-sm font-medium border border-gray-200 rounded-r-lg">Recommandation</button>
+                            </div>
+                        </div>
+                        <div id="sas-content">
+                            <h3 class="font-semibold text-lg text-gray-800 mb-2 text-center">SAS : La voie royale pour les startups</h3>
+                            <p class="text-gray-600 mb-4 text-center">La Société par Actions Simplifiée est plébiscitée par les startups pour sa grande flexibilité et son attractivité auprès des investisseurs.</p>
+                            <ul class="space-y-3 text-gray-700">
+                                <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">✓</span><span><strong>Flexibilité :</strong> Les statuts sont "à la carte". Vous définissez librement les règles de gouvernance, les catégories d'actions (avec droits de vote ou dividendes différents), etc. Idéal pour une équipe de 6.</span></li>
+                                <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">✓</span><span><strong>Levée de fonds :</strong> Structure préférée des investisseurs (VCs, Business Angels) car elle permet des montages financiers complexes (actions de préférence, BSPCE...).</span></li>
+                                <li class="flex items-start"><span class="text-blue-500 mr-3 mt-1">✓</span><span><strong>Statut du dirigeant :</strong> Le Président est "assimilé-salarié", rattaché au régime général. Les dividendes ne sont pas soumis aux cotisations sociales, un avantage fiscal majeur.</span></li>
+                            </ul>
+                        </div>
+                        <div id="sarl-content" class="hidden">
+                            <h3 class="font-semibold text-lg text-gray-800 mb-2 text-center">SARL : Plus simple, mais plus rigide</h3>
+                            <p class="text-gray-600 mb-4 text-center">La Société à Responsabilité Limitée est plus encadrée par la loi, ce qui la rend moins adaptée aux projets innovants à forte croissance.</p>
+                            <ul class="space-y-3 text-gray-700">
+                                <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">✗</span><span><strong>Rigidité :</strong> Les statuts sont très réglementés. Le capital est divisé en parts sociales de même catégorie, ce qui limite la structuration de l'actionnariat.</span></li>
+                                <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">✗</span><span><strong>Levée de fonds :</strong> Moins attractive pour les investisseurs qui recherchent des instruments financiers spécifiques impossibles à mettre en place en SARL.</span></li>
+                                <li class="flex items-start"><span class="text-red-500 mr-3 mt-1">✗</span><span><strong>Statut du dirigeant :</strong> Le gérant majoritaire est Travailleur Non Salarié (TNS), avec une protection sociale plus faible. Les dividendes sont soumis à cotisations sociales au-delà d'un certain seuil.</span></li>
+                            </ul>
+                        </div>
+                         <div id="reco-content" class="hidden bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg">
+                            <h3 class="font-bold">Recommandation pour nosho.ai : La SAS</h3>
+                            <p class="mt-2">Pour une startup comme la vôtre, avec 6 fondateurs, des engagements variés, et des ambitions de croissance et de levée de fonds, **la SAS est le choix quasi-inévitable**. Sa flexibilité vous permettra de créer une gouvernance sur-mesure et sa structure est pensée pour attirer les investisseurs. Opter pour une SARL créerait des freins et des coûts de transformation futurs.</p>
+                        </div>
+                    </div>
+                 </div>
+            </section>
+
+            <section id="repartition" class="content-section">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900">Étape 2 : Simuler la Répartition du Capital</h2>
+                    <p class="mt-2 text-gray-600 max-w-3xl mx-auto">C'est la discussion la plus délicate. Une répartition égale est simple mais rarement juste. Un modèle pondéré, qui valorise les différentes contributions, est souvent une meilleure base de discussion. Utilisez ce simulateur pour explorer un scénario.</p>
+                </div>
+                <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 items-center bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                    <div>
+                        <h3 class="font-semibold text-lg mb-4">Simulateur de contributions pondérées</h3>
+                        <div id="founders-inputs" class="space-y-4 max-h-96 overflow-y-auto pr-2"></div>
+                        <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg">
+                            <p class="text-sm font-semibold">Avertissement</p>
+                            <p class="text-sm">Cet outil est un simulateur à but éducatif. La pondération est indicative. La répartition finale doit résulter d'une discussion approfondie et transparente entre tous les fondateurs, validée par un conseil juridique.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="chart-container">
+                            <canvas id="equitySplitChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="pacte" class="content-section">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900">Étape 3 : Définir les Règles du Jeu avec le Pacte d'Associés</h2>
+                    <p class="mt-2 text-gray-600 max-w-3xl mx-auto">Le pacte d'associés est votre "contrat de mariage". C'est un document confidentiel qui définit comment vous travaillez ensemble, prenez des décisions et gérez les départs. Il est indispensable pour prévenir les conflits.</p>
+                </div>
+                <div class="max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                    <h3 class="font-semibold text-lg mb-6 text-center">Clauses Incontournables (Passez la souris pour voir les détails)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="card-flip h-40 rounded-lg">
+                            <div class="card-flip-inner">
+                                <div class="card-face card-front"><span class="text-xl font-bold">Vesting</span></div>
+                                <div class="card-face card-back"><p class="text-sm"><strong>Définition :</strong> Acquisition progressive des parts sur 3-4 ans. Protège contre le départ prématuré d'un fondateur avec 100% de ses parts ("dead equity").</p></div>
+                            </div>
+                        </div>
+                        <div class="card-flip h-40 rounded-lg">
+                            <div class="card-flip-inner">
+                                <div class="card-face card-front"><span class="text-xl font-bold">Good / Bad Leaver</span></div>
+                                <div class="card-face card-back"><p class="text-sm"><strong>Définition :</strong> Définit les conditions de rachat des parts selon les motifs du départ (légitime ou fautif). Essentiel pour gérer les sorties proprement.</p></div>
+                            </div>
+                        </div>
+                        <div class="card-flip h-40 rounded-lg">
+                            <div class="card-flip-inner">
+                                <div class="card-face card-front"><span class="text-xl font-bold">Gouvernance</span></div>
+                                <div class="card-face card-back"><p class="text-sm"><strong>Définition :</strong> Précise qui décide de quoi (décisions unanimes, majorités, droit de veto). Crucial pour éviter les blocages dans une équipe de 6.</p></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-12">
+                         <h3 class="font-semibold text-lg mb-2 text-center">Visualiseur de Vesting sur 4 ans</h3>
+                         <p class="text-center text-gray-600 text-sm mb-4">Simule l'acquisition des parts d'un fondateur avec une période de "cliff" d'un an (rien n'est acquis avant la fin de la 1ère année).</p>
+                        <div class="chart-container" style="max-width: 600px; height: 250px;">
+                            <canvas id="vestingChart"></canvas>
+                        </div>
+                        <div class="mt-4 max-w-md mx-auto">
+                            <label for="vesting-slider" class="block mb-2 text-sm font-medium text-gray-900">Mois depuis la création : <span id="vesting-month">0</span></label>
+                            <input id="vesting-slider" type="range" min="0" max="48" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="futur" class="content-section">
+                 <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900">Étape 4 : Préparer l'Avenir et Attirer les Talents</h2>
+                    <p class="mt-2 text-gray-600 max-w-3xl mx-auto">Pour grandir, vous devrez attirer des employés clés. L'equity (les parts de l'entreprise) est le meilleur outil. Cela implique de créer un pool d'options (ESOP) et de comprendre les instruments comme les BSPCE.</p>
+                </div>
+                <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 items-center bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                     <div>
+                        <h3 class="font-semibold text-lg mb-4">Comprendre la Dilution et l'ESOP</h3>
+                        <p class="text-gray-600 mb-4">Créer un pool d'options pour les employés (ESOP) et lever des fonds va "diluer" les fondateurs. Cela signifie que votre pourcentage diminue, mais la valeur de vos parts peut augmenter considérablement car la valeur totale de l'entreprise (le "gâteau") grandit.</p>
+                        <p class="text-gray-600 mb-4">Les investisseurs s'attendent à voir un ESOP de 10-20% prêt à être utilisé pour les futurs talents. Le prévoir dès maintenant est un signe de maturité.</p>
+                        <button id="dilution-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Simuler une levée de fonds + création d'ESOP</button>
+                    </div>
+                    <div>
+                        <div class="chart-container">
+                            <canvas id="dilutionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                 <div class="max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-sm mt-8">
+                     <h3 class="font-semibold text-lg mb-6 text-center">Les Instruments pour Intéresser les Talents en France</h3>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Instrument</th>
+                                    <th scope="col" class="px-6 py-3">Principal Avantage</th>
+                                    <th scope="col" class="px-6 py-3">Bénéficiaires types</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-white border-b">
+                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">BSPCE</th>
+                                    <td class="px-6 py-4">Fiscalité très avantageuse pour le bénéficiaire. Le standard pour les startups.</td>
+                                    <td class="px-6 py-4">Salariés et dirigeants assimilés-salariés.</td>
+                                </tr>
+                                <tr class="bg-white border-b">
+                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">BSA</th>
+                                    <td class="px-6 py-4">Très flexibles, peuvent être attribués à tous (consultants, advisors, fondateurs non-salariés).</td>
+                                    <td class="px-6 py-4">Tiers, partenaires stratégiques, conseillers.</td>
+                                </tr>
+                                <tr class="bg-white">
+                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">Actions Gratuites (AGA)</th>
+                                    <td class="px-6 py-4">Gratuites pour le bénéficiaire, mais plus coûteuses pour l'entreprise (charges sociales).</td>
+                                    <td class="px-6 py-4">Souvent utilisées par des entreprises plus matures.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </section>
+
+            <section id="checklist" class="content-section">
+                <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Votre Checklist d'Actions Clés</h2>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <input id="check1" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 mr-3 shrink-0">
+                            <label for="check1" class="text-gray-700"><strong>Valider le choix de la SAS</strong> comme structure juridique avec tous les co-fondateurs.</label>
+                        </li>
+                         <li class="flex items-start">
+                            <input id="check2" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 mr-3 shrink-0">
+                            <label for="check2" class="text-gray-700"><strong>Organiser un atelier</strong> pour évaluer les contributions de chacun et discuter de la répartition du capital.</label>
+                        </li>
+                         <li class="flex items-start">
+                            <input id="check3" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 mr-3 shrink-0">
+                            <label for="check3" class="text-gray-700"><strong>Mandater un avocat spécialisé</strong> pour rédiger les statuts et le pacte d'associés.</label>
+                        </li>
+                         <li class="flex items-start">
+                            <input id="check4" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 mr-3 shrink-0">
+                            <label for="check4" class="text-gray-700"><strong>Intégrer les clauses clés</strong> (Vesting, Leaver, Gouvernance) dans le pacte d'associés.</label>
+                        </li>
+                         <li class="flex items-start">
+                            <input id="check5" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 mr-3 shrink-0">
+                            <label for="check5" class="text-gray-700"><strong>Définir et réserver un Pool d'Options (ESOP)</strong> de 10 à 15% dans votre cap table prévisionnelle.</label>
+                        </li>
+                         <li class="flex items-start">
+                            <input id="check6" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 mr-3 shrink-0">
+                            <label for="check6" class="text-gray-700"><strong>Choisir un outil de gestion de cap table</strong> pour suivre l'évolution de votre actionnariat.</label>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const founderNames = ['Cofondateur 1', 'Cofondateur 2', 'Cofondateur 3', 'Cofondateur 4', 'Cofondateur 5', 'Cofondateur 6'];
+            const colors = ['#3b82f6', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#f59e0b', '#6366f1', '#14b8a6'];
+            
+            let equitySplitChart, vestingChart, dilutionChart;
+
+            function initEquitySplitChart() {
+                const ctx = document.getElementById('equitySplitChart').getContext('2d');
+                const initialData = {
+                    labels: founderNames,
+                    datasets: [{
+                        data: Array(founderNames.length).fill(100 / founderNames.length),
+                        backgroundColor: colors.slice(0, founderNames.length),
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                };
+                equitySplitChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: initialData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.raw.toFixed(2)}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateEquitySplitChart() {
+                const inputs = document.querySelectorAll('.founder-input-group');
+                const contributions = Array.from(inputs).map(group => {
+                    const idea = parseInt(group.querySelector('input[name="idea"]').value);
+                    const capital = parseInt(group.querySelector('input[name="capital"]').value);
+                    const time = parseInt(group.querySelector('input[name="time"]').value);
+                    const expertise = parseInt(group.querySelector('input[name="expertise"]').value);
+                    return (idea * 1.5) + (capital * 2) + (time * 1.2) + (expertise * 1);
+                });
+                const totalContributions = contributions.reduce((sum, c) => sum + c, 0);
+                const percentages = contributions.map(c => (c / totalContributions) * 100);
+                
+                equitySplitChart.data.datasets[0].data = percentages;
+                equitySplitChart.update();
+            }
+
+            function createFounderInputs() {
+                const container = document.getElementById('founders-inputs');
+                container.innerHTML = '';
+                founderNames.forEach((name, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'founder-input-group p-3 border rounded-lg bg-gray-50';
+                    div.innerHTML = `
+                        <p class="font-semibold text-gray-700 mb-2">${name}</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                                <label class="block">Idée / Vision</label>
+                                <input type="range" name="idea" min="0" max="10" value="5" class="w-full">
+                            </div>
+                            <div>
+                                <label class="block">Capital Apporté</label>
+                                <input type="range" name="capital" min="0" max="10" value="5" class="w-full">
+                            </div>
+                            <div>
+                                <label class="block">Engagement Temps</label>
+                                <input type="range" name="time" min="0" max="10" value="5" class="w-full">
+                            </div>
+                             <div>
+                                <label class="block">Expertise / Réseau</label>
+                                <input type="range" name="expertise" min="0" max="10" value="5" class="w-full">
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+
+                document.querySelectorAll('.founder-input-group input[type="range"]').forEach(input => {
+                    input.addEventListener('input', updateEquitySplitChart);
+                });
+            }
+
+            function initVestingChart() {
+                const ctx = document.getElementById('vestingChart').getContext('2d');
+                vestingChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Equity'],
+                        datasets: [
+                            { label: 'Vested', data: [0], backgroundColor: '#3b82f6' },
+                            { label: 'Unvested', data: [100], backgroundColor: '#e5e7eb' }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { stacked: true, max: 100, ticks: { callback: value => value + '%' } },
+                            y: { stacked: true, display: false }
+                        },
+                        plugins: {
+                            legend: { display: true, position: 'bottom' },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+            }
+
+            function updateVestingChart(month) {
+                const monthSpan = document.getElementById('vesting-month');
+                monthSpan.textContent = month;
+                let vestedPercentage = 0;
+                if (month >= 12) {
+                    vestedPercentage = 25 + ((month - 12) / 36) * 75;
+                }
+                vestedPercentage = Math.min(vestedPercentage, 100);
+                vestingChart.data.datasets[0].data[0] = vestedPercentage;
+                vestingChart.data.datasets[1].data[0] = 100 - vestedPercentage;
+                vestingChart.update();
+            }
+            
+            function initDilutionChart(initialState = true) {
+                const ctx = document.getElementById('dilutionChart').getContext('2d');
+                if(dilutionChart) dilutionChart.destroy();
+
+                let labels, data, title;
+                if(initialState) {
+                    labels = ['Fondateurs'];
+                    data = [100];
+                    title = 'Situation Initiale';
+                } else {
+                    labels = ['Fondateurs (dilués)', 'ESOP', 'Investisseurs Seed'];
+                    data = [70, 10, 20];
+                    title = 'Après levée de fonds + ESOP';
+                }
+
+                dilutionChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#3b82f6', '#f97316', '#10b981'],
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: { display: true, text: title },
+                            tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}%` } }
+                        }
+                    }
+                });
+            }
+
+            const tabs = document.querySelectorAll('.nav-tab');
+            const sections = document.querySelectorAll('.content-section');
+
+            function switchTab(targetId) {
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === targetId) {
+                        section.classList.add('active');
+                    }
+                });
+                tabs.forEach(tab => {
+                    tab.classList.remove('border-blue-500', 'text-blue-600');
+                    tab.classList.add('border-transparent', 'text-gray-500');
+                    if (tab.dataset.target === targetId) {
+                        tab.classList.add('border-blue-500', 'text-blue-600');
+                        tab.classList.remove('border-transparent', 'text-gray-500');
+                    }
+                });
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.target));
+            });
+            
+            switchTab('intro');
+
+            const structureTabs = {
+                sas: document.getElementById('sas-btn'),
+                sarl: document.getElementById('sarl-btn'),
+                reco: document.getElementById('reco-btn')
+            };
+            const structureContents = {
+                sas: document.getElementById('sas-content'),
+                sarl: document.getElementById('sarl-content'),
+                reco: document.getElementById('reco-content')
+            };
+
+            Object.keys(structureTabs).forEach(key => {
+                structureTabs[key].addEventListener('click', () => {
+                    Object.values(structureTabs).forEach(t => t.classList.remove('active'));
+                    Object.values(structureContents).forEach(c => c.classList.add('hidden'));
+                    structureTabs[key].classList.add('active');
+                    structureContents[key].classList.remove('hidden');
+                });
+            });
+
+            document.getElementById('vesting-slider').addEventListener('input', (e) => updateVestingChart(e.target.value));
+            document.getElementById('dilution-btn').addEventListener('click', () => initDilutionChart(false));
+
+
+            initEquitySplitChart();
+            createFounderInputs();
+            updateEquitySplitChart();
+            initVestingChart();
+            updateVestingChart(0);
+            initDilutionChart(true);
+        });
+    </script>
+</body>
+</html>
