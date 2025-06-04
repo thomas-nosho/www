@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse Stratégique pour Nosho.ai</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The dense report is transformed into a single-page application with four distinct, task-oriented views: 1) A 'Dashboard' for a high-level summary with key metrics and charts. 2) A 'Startup Explorer' for deep-diving into the data with interactive filters and detailed modals. 3) A 'Strategic Matrix' (bubble chart) to visually map the competitive and collaborative landscape. 4) An 'Action Plan' table to present prioritized next steps. This structure breaks down complexity, prevents cognitive overload, and guides the user from general understanding to specific action, which is far more usable than a long, linear document. -->
+    <!-- Visualization & Content Choices: Report Info -> Startups list & relevance. Goal -> Overview & Exploration. Viz/Method -> A Donut chart (Chart.js) shows relevance distribution at a glance. An interactive card grid (HTML/Tailwind/JS) allows for filtering and detailed exploration. A Bubble chart (Chart.js) visualizes the strategic landscape (Relevance vs. Classification). An HTML table presents the action plan. Interaction -> Filters dynamically update the card grid. Clicks on cards or bubbles open a modal with detailed analysis, creating an interactive, drill-down experience. This structure supports the user's journey from discovery to analysis. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .nav-link { transition: all 0.3s ease; }
+        .nav-link.active {
+            background-color: #2563eb;
+            color: white;
+        }
+        .section-content { display: none; }
+        .section-content.active { display: block; }
+        .card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+        .modal-bg {
+            background-color: rgba(0,0,0,0.5);
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold leading-tight text-slate-900">Analyse Stratégique pour Nosho.ai</h1>
+            <p class="mt-1 text-slate-500">Exploration interactive des startups de PariSanté Campus</p>
+        </div>
+    </header>
+
+    <nav class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-center items-center space-x-2 sm:space-x-4 py-2">
+                <button data-section="dashboard" class="nav-link active px-3 py-2 font-medium text-sm rounded-md">📊 Vue d'ensemble</button>
+                <button data-section="explorer" class="nav-link px-3 py-2 font-medium text-sm rounded-md">🔬 Explorateur</button>
+                <button data-section="matrix" class="nav-link px-3 py-2 font-medium text-sm rounded-md">🎯 Matrice Stratégique</button>
+                <button data-section="plan" class="nav-link px-3 py-2 font-medium text-sm rounded-md">✅ Plan d'Action</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        
+        <section id="dashboard" class="section-content active">
+             <div class="px-4 py-6 sm:px-0">
+                <h2 class="text-2xl font-semibold text-slate-800 mb-4">Tableau de Bord</h2>
+                <p class="text-slate-600 mb-6">Cette vue synthétise les conclusions clés du rapport, offrant un aperçu rapide du paysage des startups de PariSanté Campus et leur pertinence pour Nosho.ai. Utilisez cette section pour saisir les tendances générales avant d'explorer les détails.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-slate-500 text-sm font-medium">Startups Analysées</h3>
+                        <p id="total-startups" class="text-3xl font-bold text-blue-600 mt-2">60</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-slate-500 text-sm font-medium">Partenaires Potentiels Clés</h3>
+                        <p id="potential-partners" class="text-3xl font-bold text-green-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-slate-500 text-sm font-medium">Concurrents Potentiels</h3>
+                        <p id="potential-competitors" class="text-3xl font-bold text-red-600 mt-2">0</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-4">Répartition par Pertinence</h3>
+                        <div class="chart-container">
+                            <canvas id="relevanceChart"></canvas>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-4">Recommandations Stratégiques</h3>
+                        <ul class="space-y-4 text-slate-700">
+                           <li class="flex items-start">
+                                <span class="text-blue-500 mr-3 mt-1">▶</span>
+                                <div>
+                                    <h4 class="font-semibold">Renforcer la Spécialisation Vocale</h4>
+                                    <p class="text-sm text-slate-600">Améliorer la qualité et l'empathie de l'agent vocal pour en faire un différenciateur clé sur le marché.</p>
+                                </div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-blue-500 mr-3 mt-1">▶</span>
+                                <div>
+                                    <h4 class="font-semibold">Construire un Écosystème d'Intégration</h4>
+                                    <p class="text-sm text-slate-600">Développer des APIs robustes pour intégrer facilement Nosho.ai aux plateformes existantes (DMP, télémédecine, etc.).</p>
+                                </div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-blue-500 mr-3 mt-1">▶</span>
+                                <div>
+                                    <h4 class="font-semibold">Quantifier le Retour sur Investissement (ROI)</h4>
+                                    <p class="text-sm text-slate-600">Démontrer de manière chiffrée les gains (temps, argent) pour les clients afin de solidifier la proposition de valeur.</p>
+                                </div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-blue-500 mr-3 mt-1">▶</span>
+                                <div>
+                                    <h4 class="font-semibold">Développer des Solutions Ciblées</h4>
+                                    <p class="text-sm text-slate-600">Créer des modules spécifiques pour les domaines à fort impact de no-shows (soins à domicile, cabines de télémédecine, essais cliniques).</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="explorer" class="section-content">
+            <div class="px-4 py-6 sm:px-0">
+                <h2 class="text-2xl font-semibold text-slate-800 mb-4">Explorateur de Startups</h2>
+                <p class="text-slate-600 mb-6">Filtrez et explorez la liste complète des startups de la promotion. Cliquez sur une carte pour afficher l'analyse détaillée, y compris les implications stratégiques pour Nosho.ai. C'est l'outil principal pour vos recherches approfondies.</p>
+                <div class="bg-white p-4 rounded-lg shadow mb-6 sticky top-[72px] z-30">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="text" id="search-input" placeholder="Rechercher par nom..." class="col-span-1 md:col-span-1 w-full p-2 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <div>
+                            <label for="filter-relevance" class="block text-sm font-medium text-slate-700">Pertinence</label>
+                            <select id="filter-relevance" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option>Toutes</option>
+                                <option>Élevée</option>
+                                <option>Moyenne</option>
+                                <option>Faible</option>
+                                <option>Nulle</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter-classification" class="block text-sm font-medium text-slate-700">Classification</label>
+                            <select id="filter-classification" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option>Toutes</option>
+                                <option>Partenaire Potentiel</option>
+                                <option>Concurrent Potentiel</option>
+                                <option>Source d'Inspiration</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter-category" class="block text-sm font-medium text-slate-700">Catégorie</label>
+                            <select id="filter-category" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option>Toutes</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="startup-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+                 <p id="no-results" class="text-center text-slate-500 py-12" style="display: none;">Aucun résultat ne correspond à vos critères de recherche.</p>
+            </div>
+        </section>
+
+        <section id="matrix" class="section-content">
+             <div class="px-4 py-6 sm:px-0">
+                <h2 class="text-2xl font-semibold text-slate-800 mb-4">Matrice Stratégique</h2>
+                <p class="text-slate-600 mb-6">Cette matrice visuelle positionne les startups les plus pertinentes en fonction de leur classification (Partenaire vs. Concurrent) et de leur niveau de pertinence pour Nosho.ai. Cliquez sur une bulle pour obtenir l'analyse détaillée et identifier rapidement les acteurs clés à surveiller ou à contacter.</p>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="chart-container" style="max-width: 1000px; height: 500px;">
+                        <canvas id="matrixChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="plan" class="section-content">
+             <div class="px-4 py-6 sm:px-0">
+                <h2 class="text-2xl font-semibold text-slate-800 mb-4">Plan d'Action Priorisé</h2>
+                 <p class="text-slate-600 mb-6">Ce tableau, directement inspiré des recommandations du rapport, liste les startups avec lesquelles un engagement est préconisé. Utilisez-le pour organiser vos prochaines étapes, qu'il s'agisse d'une veille concurrentielle, d'une prise de contact pour un partenariat, ou d'une analyse plus approfondie.</p>
+                <div class="bg-white p-4 rounded-lg shadow overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Startup</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type d'Engagement</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Priorité</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Prochaines Étapes Suggérées</th>
+                            </tr>
+                        </thead>
+                        <tbody id="action-plan-table" class="bg-white divide-y divide-slate-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal" class="fixed inset-0 z-50 items-center justify-center p-4 hidden" style="background-color: rgba(0,0,0,0.5);">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white p-4 border-b border-slate-200 flex justify-between items-center z-10">
+                <h3 id="modal-title" class="text-xl font-bold text-slate-900"></h3>
+                <button id="modal-close" class="text-slate-400 hover:text-slate-600">
+                    <span class="text-2xl">&times;</span>
+                </button>
+            </div>
+            <div id="modal-content" class="p-6">
+            </div>
+        </div>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const startupData = [
+        {
+            nom: "MediaInterface",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Élevée",
+            classification: "Concurrent Potentiel",
+            description: "Plateforme de création de documents médicaux par reconnaissance vocale IA pour professionnels.",
+            analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">MediaInterface possède une compétence centrale en reconnaissance vocale IA dans le domaine médical, ce qui est directement adjacent à la technologie de Nosho.ai. Actuellement, ils se concentrent sur la documentation pour les cliniciens, laissant une opportunité pour les interactions vocales orientées patient.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Concurrent Potentiel :</strong> Leur expertise en IA vocale pourrait en faire un concurrent redoutable s'ils décident d'étendre leurs solutions vers la gestion des rendez-vous patient.</li>
+                    <li><strong>Partenaire Potentiel :</strong> Une collaboration pourrait être synergique. Nosho.ai gérerait l'interaction patient, et MediaInterface pourrait utiliser ces données vocales pour enrichir la documentation clinique, créant un flux de travail vocal complet.</li>
+                    <li><strong>Action :</strong> Surveiller leur feuille de route produit. Évaluer la performance de leur moteur vocal par rapport à celui de Nosho.ai.</li>
+                </ul>`
+        },
+        {
+            nom: "BotDesign",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Élevée",
+            classification: "Partenaire Potentiel",
+            description: "Plateforme HEKO avec chatbots pour la communication patient et la réduction de l'anxiété préopératoire.",
+            analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">La plateforme HEKO de BotDesign utilise des chatbots textuels pour améliorer le parcours de soins, réduire l'anxiété et améliorer la rétention d'information. Ces objectifs sont alignés avec la réduction des no-shows, bien que leur focus ne soit pas la gestion des RDV généraux.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Partenaire Potentiel :</strong> Nosho.ai peut proposer d'intégrer son agent vocal pour ajouter une dimension vocale aux rappels de RDV dans les parcours HEKO. Une offre combinée (chat textuel HEKO + agent vocal Nosho.ai) serait très puissante.</li>
+                    <li><strong>Source d'Inspiration :</strong> Le succès de leurs "information BOTs" pour réduire l'anxiété est une leçon clé. Nosho.ai peut enrichir ses interactions vocales avec du contenu informatif et rassurant, allant au-delà du simple rappel.</li>
+                    <li><strong>Action :</strong> Contacter pour une discussion d'intégration. S'inspirer de leur contenu pour prototyper un module vocal de "réduction de l'anxiété".</li>
+                </ul>`
+        },
+        {
+            nom: "H24 CARE",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Élevée",
+            classification: "Partenaire Potentiel",
+            description: "Redirection de patients des urgences via IA et un 'Agenda Médical Interopérable' pour les soins non programmés.",
+            analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">H24 CARE se concentre sur la réorientation des patients non-urgents vers des praticiens locaux disponibles. Leur succès dépend de la présence effective des patients à ces RDV réorientés. Ils ne semblent pas avoir de système avancé de prévention des no-shows.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Partenaire Potentiel :</strong> Le taux de no-shows est critique pour la viabilité de leur modèle. Nosho.ai peut s'intégrer pour fournir des rappels vocaux et confirmations, améliorant l'efficacité de leur système de réorientation.</li>
+                    <li><strong>Concurrence de Niche :</strong> Leur "Agenda Médical Interopérable" est une forme de gestion de RDV, mais sur un créneau très spécifique que Nosho.ai ne cible peut-être pas directement.</li>
+                    <li><strong>Action :</strong> Proposer Nosho.ai comme un module de réduction des no-shows pour optimiser leur service.</li>
+                </ul>`
+        },
+        {
+            nom: "Posos",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Élevée",
+            classification: "Partenaire Potentiel",
+            description: "Simplifie et sécurise les prescriptions via IA, retranscription d'ordonnances et aide à la décision.",
+            analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">Posos se concentre sur l'adhérence médicamenteuse et la sécurité des prescriptions. Ils rationalisent la partie prescription du parcours patient. L'IA est utilisée pour la retranscription d'ordonnances.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Partenaire Potentiel :</strong> Les deux solutions sont complémentaires. Nosho.ai peut s'intégrer pour gérer l'adhérence aux RDV de suivi qui découlent d'une prescription gérée via Posos. Cela créerait une boucle fermée prescription -> suivi.</li>
+                    <li><strong>Source d'Inspiration :</strong> Leur utilisation de l'IA pour l'analyse de données patient pourrait inspirer Nosho.ai à enrichir ses propres algorithmes de prédiction de no-show.</li>
+                    <li><strong>Action :</strong> Discuter d'une intégration pour automatiser la prise de RDV de suivi post-prescription.</li>
+                </ul>`
+        },
+        {
+            nom: "Medicalib",
+            categorie: "Plateforme des données",
+            pertinence: "Élevée",
+            classification: "Partenaire Potentiel",
+            description: "Plateforme de prise de RDV pour les soins à domicile (infirmiers, kinés, sages-femmes).",
+            analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">La gestion des RDV pour les visites à domicile est centrale pour Medicalib. Les no-shows sont particulièrement coûteux dans ce secteur à cause du temps de déplacement perdu par le professionnel de santé.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Partenaire Potentiel :</strong> Il y a un fort besoin de réduction des no-shows. L'agent vocal de Nosho.ai est particulièrement adapté pour confirmer la présence à domicile, donner des instructions spécifiques et permettre une reprogrammation facile.</li>
+                    <li><strong>Concurrent Potentiel :</strong> Ils ont probablement un système de rappel, mais sa sophistication est inconnue. La spécialisation vocale de Nosho.ai reste un avantage.</li>
+                    <li><strong>Action :</strong> Enquêter sur leurs mécanismes actuels. Proposer l'agent vocal comme une solution à valeur ajoutée pour leur réseau de soignants.</li>
+                </ul>`
+        },
+        {
+            nom: "H4D",
+            categorie: "Dispositifs médicaux",
+            pertinence: "Élevée",
+            classification: "Partenaire Potentiel",
+            description: "Cabines de téléconsultation (Consult Station) avec prise de RDV en ligne.",
+            analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">Le modèle de H4D repose sur l'utilisation planifiée de cabines physiques, qui sont un investissement en capital important. Un no-show signifie qu'un actif coûteux reste inutilisé et que le temps d'un médecin est perdu.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Partenaire Potentiel :</strong> La réduction des no-shows est essentielle pour le retour sur investissement des Consult Stations. L'agent vocal de Nosho.ai peut considérablement améliorer leur service en fournissant des rappels interactifs, des instructions et même le code d'accès à la cabine.</li>
+                    <li><strong>Action :</strong> Proposer un partenariat pour intégrer l'agent vocal dans leur processus de réservation afin de maximiser l'utilisation des cabines.</li>
+                </ul>`
+        },
+        {
+            nom: "Conex Santé",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Élevée",
+            classification: "Partenaire Potentiel",
+            description: "Plateforme de télémédecine (téléexpertise, téléconsultation assistée).",
+            analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">Conex Santé fournit la plateforme technique pour les téléconsultations. Le problème des "no-shows" existe aussi pour les rendez-vous virtuels, diminuant la valeur de la plateforme.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Partenaire Potentiel :</strong> Nosho.ai peut fournir la solution d'adhérence. Proposer l'agent vocal comme module intégré pour les rappels, confirmations, et même des vérifications techniques basiques ("Votre caméra fonctionne-t-elle ?") avant la consultation.</li>
+                    <li><strong>Action :</strong> Contacter pour proposer une intégration afin de réduire les créneaux de téléconsultation perdus.</li>
+                </ul>`
+        },
+        {
+            nom: "Téléophtalmo",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Élevée",
+            classification: "Partenaire Potentiel",
+            description: "Solution de collaboration ophtalmo/orthoptiste, gérant plus de 240k patients/an.",
+             analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">Téo gère un volume très élevé de rendez-vous dans un modèle distribué (cabinets équipés, spécialistes à distance). L'efficacité et la maximisation du temps des spécialistes sont primordiales. Les no-shows sont donc particulièrement coûteux.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Partenaire Potentiel :</strong> Leur échelle représente une opportunité significative. Nosho.ai peut optimiser l'ensemble de leur réseau en réduisant les no-shows via des rappels vocaux robustes, des confirmations et la collecte d'informations pré-consultation.</li>
+                    <li><strong>Action :</strong> Contacter pour proposer l'agent vocal comme un outil d'optimisation pour leur réseau à grand volume.</li>
+                </ul>`
+        },
+        {
+            nom: "Urgences Chrono",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Élevée",
+            classification: "Partenaire Potentiel",
+            description: "Outil de coordination pour CPTS, gestion des soins non programmés et téléconsultation.",
+             analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">Urgences Chrono aide les patients à trouver le bon lieu de soins, ce qui aboutit souvent à un RDV (même à court terme). Un no-show annule l'efficacité gagnée par la réorientation.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Partenaire Potentiel :</strong> L'adhérence est clé pour le succès de leurs orientations. Nosho.ai peut s'intégrer pour fournir le service de rappel et de confirmation pour tous les RDV facilités par leur plateforme, assurant que l'effort d'orientation n'est pas vain.</li>
+                    <li><strong>Action :</strong> Proposer une intégration pour les rappels des RDV générés via leur plateforme.</li>
+                </ul>`
+        },
+        {
+            nom: "WeFight",
+            categorie: "Thérapies numériques",
+            pertinence: "Élevée",
+            classification: "Source d'Inspiration",
+            description: "Vik: compagnon virtuel (chatbot IA) pour patients atteints de maladies chroniques, améliore l'adhérence médicamenteuse.",
+             analyse: `
+                <h4 class="font-semibold text-lg mb-2">Analyse Détaillée</h4>
+                <p class="mb-4 text-slate-600">Vik est un outil d'engagement patient très sophistiqué utilisant le chat IA textuel. Ils ont prouvé leur succès dans l'amélioration de l'adhérence médicamenteuse. L'adhérence aux RDV est souvent liée à la bonne gestion de la maladie.</p>
+                <h4 class="font-semibold text-lg mb-2">Implications Stratégiques pour Nosho.ai</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-700">
+                    <li><strong>Source d'Inspiration :</strong> Nosho.ai peut apprendre de leurs stratégies de contenu et de leurs techniques de personnalisation pour l'engagement patient. Leur succès avec le texte suggère un potentiel similaire avec la voix.</li>
+                    <li><strong>Partenaire Potentiel :</strong> Si Vik identifie un problème chez un patient (ex: effets secondaires), il pourrait déclencher un rappel plus empathique de Nosho.ai, ou même une interaction pour reprogrammer. Un module vocal Nosho.ai pourrait être intégré à Vik.</li>
+                    <li><strong>Action :</strong> Étudier leurs techniques de personnalisation. Explorer un partenariat pour ajouter une dimension vocale à la gestion des RDV via Vik.</li>
+                </ul>`
+        },
+        {
+            nom: "Hopia",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Moyenne",
+            classification: "Source d'Inspiration",
+            description: "Solution de planification optimisée des activités médicales. Prévision des flux patients par IA en développement.",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+        {
+            nom: "Team'doc",
+            categorie: "Innovation organisationnelle",
+            pertinence: "Moyenne",
+            classification: "Partenaire Potentiel",
+            description: "Messagerie médicale instantanée et sécurisée pour soignants.",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+        {
+            nom: "KEENTURTLE",
+            categorie: "Intelligence Artificielle",
+            pertinence: "Moyenne",
+            classification: "Partenaire Potentiel",
+            description: "Système d'aide à la décision clinique pour réduire l'iatrogénie médicamenteuse et sécuriser les parcours patients.",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+        {
+            nom: "Hoopigo",
+            categorie: "Plateforme des données",
+            pertinence: "Moyenne",
+            classification: "Source d'Inspiration",
+            description: "Coach digital pour patients hospitalisés (surtout chirurgie), avec chatbot et rappels.",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+        {
+            nom: "E-takescare",
+            categorie: "Dispositifs médicaux",
+            pertinence: "Moyenne",
+            classification: "Partenaire Potentiel",
+            description: "Plateforme de télésuivi médical pour maladies chroniques.",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+         {
+            nom: "Let it care",
+            categorie: "Dispositifs médicaux",
+            pertinence: "Moyenne",
+            classification: "Partenaire Potentiel",
+            description: "Solution de suivi à domicile pour personnes âgées ou dépendantes.",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+        {
+            nom: "CIBILTECH",
+            categorie: "Intelligence Artificielle",
+            pertinence: "Faible",
+            classification: "Partenaire Potentiel",
+            description: "Solutions logicielles de santé prédictive (ex: risque de perte de greffons).",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+        {
+            nom: "Apneal",
+            categorie: "Dispositifs médicaux",
+            pertinence: "Faible",
+            classification: "Non défini",
+            description: "Dépistage et suivi de l'apnée du sommeil.",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+        {
+            nom: "Klineo",
+            categorie: "Essais cliniques",
+            pertinence: "Faible",
+            classification: "Partenaire Potentiel",
+            description: "Plateforme pour faciliter le recrutement de patients dans les essais cliniques.",
+            analyse: `<p>Pas d'analyse détaillée disponible.</p>`
+        },
+        {
+            nom: "Aqemia",
+            categorie: "Découverte de médicaments",
+            pertinence: "Nulle",
+            classification: "Non défini",
+            description: "Conception de médicaments in silico basée sur l'IA.",
+            analyse: `<p>Pas de pertinence directe pour Nosho.ai.</p>`
+        }
+    ];
+
+    const actionPlanData = [
+        { startup: "BotDesign (HEKO)", engagement: "Explorer Partenariat Immédiat / Source d'Inspiration", priority: "Élevée", steps: "Contacter pour démo et discussion d'intégration. Prototyper un module vocal de réduction de l'anxiété." },
+        { startup: "H24 CARE", engagement: "Explorer Partenariat Immédiat", priority: "Élevée", steps: "Proposer Nosho.ai comme solution de rappel pour les RDV générés par leur plateforme." },
+        { startup: "Medicalib", engagement: "Explorer Partenariat Immédiat", priority: "Élevée", steps: "Enquêter sur leurs solutions anti-no-show. Proposer l'agent vocal adapté au domicile." },
+        { startup: "H4D", engagement: "Explorer Partenariat Immédiat", priority: "Élevée", steps: "Proposer l'agent pour rappels, confirmations et instructions pour les Consult Stations." },
+        { startup: "Conex Santé", engagement: "Explorer Partenariat Immédiat", priority: "Élevée", steps: "Proposer l'intégration pour les rappels et la préparation technique vocale des patients." },
+        { startup: "Téléophtalmo (Téo)", engagement: "Explorer Partenariat Immédiat", priority: "Élevée", steps: "Offrir l'agent pour la gestion des rappels et confirmations à grand volume." },
+        { startup: "MediaInterface", engagement: "Surveiller / Explorer Partenariat (long terme)", priority: "Moyenne", steps: "Analyser leurs mises à jour produit. Évaluer une synergie documentation/RDV." },
+        { startup: "Posos", engagement: "Explorer Partenariat (moyen terme) / Source d'Inspiration", priority: "Moyenne", steps: "Discuter d'une intégration pour automatiser la prise de RDV de suivi post-prescription." },
+        { startup: "WeFight (Vik)", engagement: "Source d'Inspiration / Explorer Partenariat (moyen terme)", priority: "Moyenne", steps: "Étudier leurs techniques de personnalisation. Explorer l'ajout d'un module vocal." },
+        { startup: "Urgences Chrono", engagement: "Explorer Partenariat (moyen terme)", priority: "Moyenne", steps: "Proposer Nosho.ai pour les rappels des consultations trouvées via leur plateforme." },
+        { startup: "Team'doc", engagement: "Explorer Partenariat (moyen terme)", priority: "Faible à Moyen", steps: "Discuter d'une intégration API pour le transfert des statuts de RDV." }
+    ];
+
+    let relevanceChart, matrixChart;
+
+    const sections = document.querySelectorAll('.section-content');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const startupGrid = document.getElementById('startup-grid');
+    const searchInput = document.getElementById('search-input');
+    const filterRelevance = document.getElementById('filter-relevance');
+    const filterClassification = document.getElementById('filter-classification');
+    const filterCategory = document.getElementById('filter-category');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    const modalClose = document.getElementById('modal-close');
+    const noResults = document.getElementById('no-results');
+
+    function switchSection(sectionId) {
+        sections.forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(sectionId).classList.add('active');
+
+        navLinks.forEach(link => {
+            link.classList.remove('active', 'bg-blue-600', 'text-white');
+            link.classList.add('text-slate-600', 'hover:bg-slate-100');
+            if (link.dataset.section === sectionId) {
+                link.classList.add('active', 'bg-blue-600', 'text-white');
+                link.classList.remove('text-slate-600', 'hover:bg-slate-100');
+            }
+        });
+
+        if(sectionId === 'dashboard' && !relevanceChart) {
+            initDashboard();
+        }
+        if(sectionId === 'matrix' && !matrixChart) {
+            createMatrixChart();
+        }
+    }
+
+    function getTagColor(type, value) {
+        const colors = {
+            pertinence: {
+                'Élevée': 'bg-red-100 text-red-800',
+                'Moyenne': 'bg-yellow-100 text-yellow-800',
+                'Faible': 'bg-blue-100 text-blue-800',
+                'Nulle': 'bg-slate-100 text-slate-800'
+            },
+            classification: {
+                'Concurrent Potentiel': 'bg-orange-100 text-orange-800',
+                'Partenaire Potentiel': 'bg-green-100 text-green-800',
+                'Source d\'Inspiration': 'bg-purple-100 text-purple-800',
+                'Non défini': 'bg-slate-100 text-slate-800'
+            }
+        };
+        return colors[type][value] || 'bg-slate-100 text-slate-800';
+    }
+    
+    function renderStartups(filteredData) {
+        startupGrid.innerHTML = '';
+        if (filteredData.length === 0) {
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
+        }
+        filteredData.forEach(startup => {
+            const card = document.createElement('div');
+            card.className = 'card bg-white rounded-lg shadow p-5 flex flex-col cursor-pointer';
+            card.innerHTML = `
+                <h3 class="text-lg font-bold text-slate-900">${startup.nom}</h3>
+                <p class="text-sm text-slate-500 mb-3">${startup.categorie}</p>
+                <p class="text-sm text-slate-600 flex-grow">${startup.description}</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${getTagColor('pertinence', startup.pertinence)}">${startup.pertinence}</span>
+                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${getTagColor('classification', startup.classification)}">${startup.classification}</span>
+                </div>
+            `;
+            card.addEventListener('click', () => showModal(startup));
+            startupGrid.appendChild(card);
+        });
+    }
+
+    function filterAndRender() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const relevance = filterRelevance.value;
+        const classification = filterClassification.value;
+        const category = filterCategory.value;
+
+        const filteredData = startupData.filter(s => {
+            const matchesSearch = s.nom.toLowerCase().includes(searchTerm);
+            const matchesRelevance = relevance === 'Toutes' || s.pertinence === relevance;
+            const matchesClassification = classification === 'Toutes' || s.classification === classification;
+            const matchesCategory = category === 'Toutes' || s.categorie === category;
+            return matchesSearch && matchesRelevance && matchesClassification && matchesCategory;
+        });
+        renderStartups(filteredData);
+    }
+
+    function populateFilters() {
+        const categories = [...new Set(startupData.map(s => s.categorie))];
+        categories.sort().forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            filterCategory.appendChild(option);
+        });
+    }
+
+    function showModal(startup) {
+        modalTitle.textContent = startup.nom;
+        modalContent.innerHTML = startup.analyse;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideModal() {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+    
+    function createRelevanceChart() {
+        const ctx = document.getElementById('relevanceChart').getContext('2d');
+        const relevanceCounts = startupData.reduce((acc, s) => {
+            acc[s.pertinence] = (acc[s.pertinence] || 0) + 1;
+            return acc;
+        }, {});
+
+        relevanceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(relevanceCounts),
+                datasets: [{
+                    label: 'Nombre de startups',
+                    data: Object.values(relevanceCounts),
+                    backgroundColor: [
+                        '#ef4444', 
+                        '#f59e0b',
+                        '#3b82f6',
+                        '#6b7280'
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createMatrixChart() {
+        const ctx = document.getElementById('matrixChart').getContext('2d');
+        
+        const relevanceMap = { 'Nulle': 0, 'Faible': 1, 'Moyenne': 2, 'Élevée': 3 };
+        const classMap = { 'Partenaire Potentiel': 1, 'Source d\'Inspiration': 2, 'Concurrent Potentiel': 3 };
+        
+        const data = startupData
+            .filter(s => s.pertinence !== 'Nulle' && s.classification !== 'Non défini')
+            .map(s => ({
+                x: classMap[s.classification] || 0,
+                y: relevanceMap[s.pertinence] || 0,
+                r: 10,
+                label: s.nom,
+                startup: s
+            }));
+
+        matrixChart = new Chart(ctx, {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: 'Startups Stratégiques',
+                    data: data,
+                    backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                    borderColor: 'rgb(37, 99, 235)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (evt, elements) => {
+                    if (elements.length > 0) {
+                        const elementIndex = elements[0].index;
+                        const startupObject = matrixChart.data.datasets[0].data[elementIndex].startup;
+                        showModal(startupObject);
+                    }
+                },
+                scales: {
+                    y: {
+                        title: { display: true, text: 'Niveau de Pertinence', font: { size: 14 } },
+                        ticks: {
+                            callback: function(value) {
+                                return Object.keys(relevanceMap).find(key => relevanceMap[key] === value);
+                            }
+                        },
+                        min: 0,
+                        max: 3
+                    },
+                    x: {
+                         title: { display: true, text: 'Classification Stratégique', font: { size: 14 } },
+                        ticks: {
+                            callback: function(value) {
+                                return Object.keys(classMap).find(key => classMap[key] === value) || '';
+                            }
+                        },
+                         min: 0.5,
+                         max: 3.5
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw.label;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    function populateActionPlan() {
+        const tableBody = document.getElementById('action-plan-table');
+        actionPlanData.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-slate-50';
+            let priorityClass = '';
+            if (item.priority === 'Élevée') priorityClass = 'text-red-600 font-semibold';
+            if (item.priority === 'Moyenne') priorityClass = 'text-yellow-600 font-semibold';
+
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${item.startup}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${item.engagement}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm ${priorityClass}">${item.priority}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${item.steps}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function initDashboard() {
+        const partnersCount = startupData.filter(s => s.classification === 'Partenaire Potentiel' && s.pertinence === 'Élevée').length;
+        const competitorsCount = startupData.filter(s => s.classification === 'Concurrent Potentiel').length;
+        document.getElementById('potential-partners').textContent = partnersCount;
+        document.getElementById('potential-competitors').textContent = competitorsCount;
+        createRelevanceChart();
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            switchSection(link.dataset.section);
+        });
+    });
+
+    searchInput.addEventListener('input', filterAndRender);
+    filterRelevance.addEventListener('change', filterAndRender);
+    filterClassification.addEventListener('change', filterAndRender);
+    filterCategory.addEventListener('change', filterAndRender);
+    modalClose.addEventListener('click', hideModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            hideModal();
+        }
+    });
+
+    switchSection('dashboard');
+    populateFilters();
+    filterAndRender();
+    populateActionPlan();
+});
+</script>
+
+</body>
+</html>
